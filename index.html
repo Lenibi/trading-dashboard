@@ -27,6 +27,12 @@
     line-height: 1;
     text-shadow: 0 2px 20px rgba(0,0,0,0.3);
   }
+  .label {
+    font-size: clamp(1rem, 3vw, 1.5rem);
+    font-weight: 400;
+    opacity: 0.6;
+    margin-bottom: 0.2rem;
+  }
   .change {
     font-size: clamp(1.5rem, 5vw, 3rem);
     font-weight: 500;
@@ -55,6 +61,7 @@
 </head>
 <body class="loading">
 
+<div class="label" id="label">USD</div>
 <div class="main-amount" id="usd">...</div>
 <div class="change" id="change"></div>
 <div class="cad" id="cad"></div>
@@ -62,11 +69,10 @@
 <div class="meta" id="meta"></div>
 
 <script>
-const CADRATE_FALLBACK = 1.44; // fallback USD->CAD rate
+const CADRATE_FALLBACK = 1.44;
 
 async function getCadRate() {
   try {
-    // Free API, no key needed
     const r = await fetch('https://open.er-api.com/v6/latest/USD');
     const d = await r.json();
     return d.rates.CAD || CADRATE_FALLBACK;
@@ -77,34 +83,34 @@ async function getCadRate() {
 
 async function load() {
   try {
-    // Cache-bust to avoid stale GitHub Pages cache
     const r = await fetch('data.json?t=' + Date.now());
     const d = await r.json();
     const cadRate = await getCadRate();
 
     const eq = d.equity_usd;
-    const start = d.starting_usd;
-    const pctChange = ((eq - start) / start * 100);
-    const isUp = eq >= start;
-
-    document.body.className = isUp ? 'up' : 'down';
+    const cadEq = eq * cadRate;
+    const startCad = d.starting_cad;
 
     // Main USD amount
+    document.getElementById('label').textContent = 'USD';
     document.getElementById('usd').textContent = '$' + eq.toLocaleString('en-US', {
       minimumFractionDigits: 2, maximumFractionDigits: 2
     });
 
-    // Change from starting
-    const sign = pctChange >= 0 ? '+' : '';
-    const dollarChange = eq - start;
-    const dollarSign = dollarChange >= 0 ? '+' : '';
-    document.getElementById('change').textContent =
-      sign + pctChange.toFixed(1) + '%  (' + dollarSign + '$' + dollarChange.toFixed(2) + ')';
-
-    // CAD
-    const cadEq = eq * cadRate;
+    // CAD equivalent
     document.getElementById('cad').textContent =
       'C$' + cadEq.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' CAD';
+
+    // P&L vs starting CAD
+    const pctChange = ((cadEq - startCad) / startCad * 100);
+    const isUp = cadEq >= startCad;
+    document.body.className = isUp ? 'up' : 'down';
+
+    const sign = pctChange >= 0 ? '+' : '';
+    const cadChange = cadEq - startCad;
+    const cadSign = cadChange >= 0 ? '+' : '';
+    document.getElementById('change').textContent =
+      sign + pctChange.toFixed(1) + '%  (' + cadSign + 'C$' + cadChange.toFixed(2) + ')';
 
     // Last trade
     if (d.last_trade) {
@@ -118,7 +124,8 @@ async function load() {
     const parts = [];
     if (d.last_update) parts.push('Updated: ' + d.last_update);
     if (d.trades_total != null) parts.push(d.trades_total + ' trades (' + d.trades_won + 'W/' + d.trades_lost + 'L)');
-    parts.push('Started: $' + start.toLocaleString('en-US', { minimumFractionDigits: 2 }));
+    const startUsd = (startCad / cadRate);
+    parts.push('Started: C$' + startCad.toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' (US$' + startUsd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ')');
     document.getElementById('meta').innerHTML = parts.join('<br>');
 
   } catch (e) {
