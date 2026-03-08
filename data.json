@@ -1,16 +1,10 @@
 {
-  "equity_usd": 522.72,
+  "equity_usd": 10000,
   "starting_usd": 10000,
-  "last_update": "2026-03-06 15:54 ET",
+  "last_update": "2026-03-08 -- awaiting first trade",
   "position": null,
-  "last_trade": {
-    "ticker": "MSTR",
-    "pnl": -18.87,
-    "return_pct": -4.5,
-    "date": "2026-03-06",
-    "result": "LOSS"
-  },
-  "trades_total": 1,
+  "last_trade": null,
+  "trades_total": 0,
   "trades_won": 0,
-  "trades_lost": 1
+  "trades_lost": 0
 }
