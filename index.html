@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Overnight Bounce</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    transition: background-color 0.5s ease;
+    color: #fff;
+  }
+  body.up { background: #0d7a3e; }
+  body.down { background: #b91c1c; }
+  body.loading { background: #1a1a2e; }
+
+  .main-amount {
+    font-size: clamp(4rem, 15vw, 10rem);
+    font-weight: 700;
+    letter-spacing: -2px;
+    line-height: 1;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  }
+  .change {
+    font-size: clamp(1.5rem, 5vw, 3rem);
+    font-weight: 500;
+    margin-top: 0.3rem;
+    opacity: 0.9;
+  }
+  .cad {
+    font-size: clamp(1.2rem, 4vw, 2.2rem);
+    font-weight: 400;
+    margin-top: 1rem;
+    opacity: 0.7;
+  }
+  .meta {
+    margin-top: 2rem;
+    font-size: clamp(0.8rem, 2vw, 1rem);
+    opacity: 0.5;
+    text-align: center;
+    line-height: 1.6;
+  }
+  .last-trade {
+    margin-top: 0.8rem;
+    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+    opacity: 0.6;
+  }
+</style>
+</head>
+<body class="loading">
+
+<div class="main-amount" id="usd">...</div>
+<div class="change" id="change"></div>
+<div class="cad" id="cad"></div>
+<div class="last-trade" id="lastTrade"></div>
+<div class="meta" id="meta"></div>
+
+<script>
+const CADRATE_FALLBACK = 1.44; // fallback USD->CAD rate
+
+async function getCadRate() {
+  try {
+    // Free API, no key needed
+    const r = await fetch('https://open.er-api.com/v6/latest/USD');
+    const d = await r.json();
+    return d.rates.CAD || CADRATE_FALLBACK;
+  } catch {
+    return CADRATE_FALLBACK;
+  }
+}
+
+async function load() {
+  try {
+    // Cache-bust to avoid stale GitHub Pages cache
+    const r = await fetch('data.json?t=' + Date.now());
+    const d = await r.json();
+    const cadRate = await getCadRate();
+
+    const eq = d.equity_usd;
+    const start = d.starting_usd;
+    const pctChange = ((eq - start) / start * 100);
+    const isUp = eq >= start;
+
+    document.body.className = isUp ? 'up' : 'down';
+
+    // Main USD amount
+    document.getElementById('usd').textContent = '$' + eq.toLocaleString('en-US', {
+      minimumFractionDigits: 2, maximumFractionDigits: 2
+    });
+
+    // Change from starting
+    const sign = pctChange >= 0 ? '+' : '';
+    const dollarChange = eq - start;
+    const dollarSign = dollarChange >= 0 ? '+' : '';
+    document.getElementById('change').textContent =
+      sign + pctChange.toFixed(1) + '%  (' + dollarSign + '$' + dollarChange.toFixed(2) + ')';
+
+    // CAD
+    const cadEq = eq * cadRate;
+    document.getElementById('cad').textContent =
+      'C$' + cadEq.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' CAD';
+
+    // Last trade
+    if (d.last_trade) {
+      const t = d.last_trade;
+      const tradeSign = t.return_pct >= 0 ? '+' : '';
+      document.getElementById('lastTrade').textContent =
+        'Last: ' + t.ticker + ' ' + tradeSign + t.return_pct.toFixed(1) + '% (' + t.result + ') on ' + t.date;
+    }
+
+    // Meta
+    const parts = [];
+    if (d.last_update) parts.push('Updated: ' + d.last_update);
+    if (d.trades_total != null) parts.push(d.trades_total + ' trades (' + d.trades_won + 'W/' + d.trades_lost + 'L)');
+    parts.push('Started: $' + start.toLocaleString('en-US', { minimumFractionDigits: 2 }));
+    document.getElementById('meta').innerHTML = parts.join('<br>');
+
+  } catch (e) {
+    document.getElementById('usd').textContent = 'Error loading data';
+    document.getElementById('meta').textContent = e.message;
+  }
+}
+
+load();
+</script>
+</body>
+</html>
