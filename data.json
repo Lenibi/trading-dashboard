@@ -1,16 +1,16 @@
 {
-  "equity_usd": 13778.26,
+  "equity_usd": 2607.35,
   "starting_cad": 752,
-  "last_update": "2026-03-24 15:45 ET",
+  "last_update": "2026-03-31 15:45 ET",
   "position": null,
   "last_trade": {
-    "ticker": "SOXL",
-    "pnl": 0.8,
-    "return_pct": 0.16,
-    "date": "2026-03-13",
-    "result": "WIN"
+    "ticker": "COIN",
+    "pnl": -63.0,
+    "return_pct": -0.46,
+    "date": "2026-03-25",
+    "result": "LOSS"
   },
-  "trades_total": 1,
+  "trades_total": 2,
   "trades_won": 1,
-  "trades_lost": 0
+  "trades_lost": 1
 }
